@@ -1,0 +1,76 @@
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import prisma from '../lib/prisma';
+import { publish } from '../events/publisher';
+
+const verifyRestaurantSchema = z.object({
+  restaurantId: z.string().uuid('Invalid restaurant ID')
+});
+
+const suspendUserSchema = z.object({
+  userId: z.string().uuid('Invalid user ID'),
+  reason: z.string().min(5, 'Reason must be at least 5 characters').max(200)
+});
+
+export const verifyRestaurant = async (req: Request, res: Response) => {
+  try {
+    const parsed = verifyRestaurantSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+    }
+
+    const { restaurantId } = parsed.data;
+
+    await publish('restaurant.verify', { restaurantId });
+
+    await prisma.adminLog.create({
+      data: {
+        adminId: req.user!.id,
+        action: 'VERIFY_RESTAURANT',
+        targetId: restaurantId,
+        targetType: 'RESTAURANT'
+      }
+    });
+
+    res.json({ message: 'Restaurant verification initiated', restaurantId });
+  } catch (err) {
+    console.error('VERIFY RESTAURANT ERROR:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const suspendUser = async (req: Request, res: Response) => {
+  try {
+    const parsed = suspendUserSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ errors: parsed.error.flatten().fieldErrors });
+    }
+
+    const { userId, reason } = parsed.data;
+
+    await prisma.adminLog.create({
+      data: {
+        adminId: req.user!.id,
+        action: 'SUSPEND_USER',
+        targetId: userId,
+        targetType: 'USER'
+      }
+    });
+
+    res.json({ message: 'User suspended', userId, reason });
+  } catch (err) {
+    console.error('SUSPEND USER ERROR:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getLogs = async (req: Request, res: Response) => {
+  try {
+    const logs = await prisma.adminLog.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};

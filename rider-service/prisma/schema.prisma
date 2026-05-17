@@ -1,0 +1,47 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Rider {
+  id          String     @id @default(uuid())
+  userId      String     @unique
+  name        String
+  phone       String
+  isAvailable Boolean    @default(false)
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deliveries  Delivery[]
+
+  @@index([userId])
+  @@index([isAvailable])
+}
+
+model Delivery {
+  id          String         @id @default(uuid())
+  riderId     String
+  orderId     String         @unique
+  status      DeliveryStatus @default(ASSIGNED)
+  pickedUpAt  DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  rider       Rider          @relation(fields: [riderId], references: [id])
+
+  @@index([riderId])
+  @@index([orderId])
+  @@index([status])
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  PICKED_UP
+  DELIVERED
+}

@@ -1,0 +1,142 @@
+version: '3.8'
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build: ./auth-service
+    restart: unless-stopped
+    ports:
+      - '4001:4001'
+    environment:
+      - PORT=4001
+      - DATABASE_URL=${AUTH_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  restaurant-service:
+    build: ./restaurant-service
+    restart: unless-stopped
+    ports:
+      - '4002:4002'
+    environment:
+      - PORT=4002
+      - DATABASE_URL=${RESTAURANT_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  rider-service:
+    build: ./rider-service
+    restart: unless-stopped
+    ports:
+      - '4003:4003'
+    environment:
+      - PORT=4003
+      - DATABASE_URL=${RIDER_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  admin-service:
+    build: ./admin-service
+    restart: unless-stopped
+    ports:
+      - '4004:4004'
+    environment:
+      - PORT=4004
+      - DATABASE_URL=${ADMIN_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  realtime-service:
+    build: ./realtime-service
+    restart: unless-stopped
+    ports:
+      - '4005:4005'
+    environment:
+      - PORT=4005
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  utils-service:
+    build: ./utils-service
+    restart: unless-stopped
+    ports:
+      - '4006:4006'
+    environment:
+      - PORT=4006
+      - JWT_SECRET=${JWT_SECRET}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+
+  gateway:
+    build: ./gateway
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      - PORT=4000
+      - AUTH_SERVICE=http://auth-service:4001
+      - RESTAURANT_SERVICE=http://restaurant-service:4002
+      - RIDER_SERVICE=http://rider-service:4003
+      - ADMIN_SERVICE=http://admin-service:4004
+      - REALTIME_SERVICE=http://realtime-service:4005
+      - UTILS_SERVICE=http://utils-service:4006
+    depends_on:
+      - auth-service
+      - restaurant-service
+      - rider-service
+      - admin-service
+      - realtime-service
+      - utils-service
+
+  client:
+    build:
+      context: ./client
+      args:
+        - VITE_RAZORPAY_KEY_ID=${VITE_RAZORPAY_KEY_ID}
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    depends_on:
+      - gateway
