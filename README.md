@@ -12,11 +12,9 @@ A production-ready food delivery platform built with a **microservices architect
 
 ##  Architecture
 
-```
 <p align="center">
   <img src="./images/architecture.png" alt="FoodFlow Architecture" width="1000"/>
 </p>          
-```
 
 ---
 
