@@ -4,48 +4,23 @@ A production-ready food delivery platform built with a **microservices architect
 
 ---
 
-## 📸 Screenshots
+##  Screenshots
 
 > Customer Dashboard · Restaurant Dashboard · Rider Dashboard · Admin Dashboard
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
-                        ┌─────────────────────────────────────┐
-                        │         Client (React + Vite)        │
-                        └──────────────┬──────────────────────┘
-                                       │
-                        ┌──────────────▼──────────────────────┐
-                        │   API Gateway (Port 4000)            │
-                        │   Rate Limiting · Helmet · CORS      │
-                        │   Response Compression               │
-                        └──┬───┬───┬───┬───┬───┬─────────────┘
-                           │   │   │   │   │   │
-              ┌────────────┘   │   │   │   │   └────────────┐
-              │                │   │   │   │                 │
-   ┌──────────▼──┐  ┌──────────▼┐ ┌▼───────────┐ ┌────────▼──────┐
-   │Auth Service │  │Restaurant │ │   Rider     │ │Admin Service  │
-   │  Port 4001  │  │  Service  │ │  Service    │ │  Port 4004    │
-   │  PostgreSQL │  │ Port 4002 │ │  Port 4003  │ │  PostgreSQL   │
-   └─────────────┘  │PostgreSQL │ │  PostgreSQL │ └───────────────┘
-                    │  + Redis  │ └─────────────┘
-                    └─────┬─────┘
-                          │
-          ┌───────────────┼────────────────┐
-          │               │                │
-   ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
-   │  RabbitMQ   │ │    Redis    │ │  Realtime   │
-   │  Event Bus  │ │    Cache    │ │   Service   │
-   └─────────────┘ └─────────────┘ │  Port 4005  │
-                                   │  Socket.IO  │
-                                   └─────────────┘
+<p align="center">
+  <img src="./images/architecture.png" alt="FoodFlow Architecture" width="1000"/>
+</p>          
 ```
 
 ---
 
-## ⚡ Tech Stack
+##  Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -66,7 +41,7 @@ A production-ready food delivery platform built with a **microservices architect
 
 ---
 
-## 🚀 Services
+##  Services
 
 | Service | Port | Responsibility |
 |---------|------|----------------|
@@ -80,28 +55,28 @@ A production-ready food delivery platform built with a **microservices architect
 
 ---
 
-## 👥 User Roles & Features
+##  User Roles & Features
 
-### 🧑 Customer
+### Customer
 - Browse restaurants and menus
 - Add items to cart
 - Place orders with Razorpay payment
 - Live order status tracking via Socket.IO
 
-### 🍽️ Restaurant Owner
+###  Restaurant Owner
 - Create restaurant (requires admin verification)
 - Manage menu items with images (Cloudinary)
 - Receive new orders in real-time
 - Update order status: `Accepted → Preparing → Ready`
 - Toggle restaurant open/closed
 
-### 🏍️ Rider
+###  Rider
 - View all READY orders available for pickup
 - Accept deliveries
 - Update delivery status
 - Mark orders as delivered
 
-### 🛡️ Admin
+###  Admin
 - View and verify restaurants (via RabbitMQ event)
 - Audit log for all admin actions
 - View all users and suspend accounts
@@ -109,7 +84,7 @@ A production-ready food delivery platform built with a **microservices architect
 
 ---
 
-## 📨 Event-Driven Flow (RabbitMQ)
+##  Event-Driven Flow (RabbitMQ)
 
 ```
 Customer places order
@@ -140,7 +115,7 @@ restaurant-service consumer ──▶ updates DB + invalidates Redis cache
 
 ---
 
-## ⚙️ Performance Optimizations
+##  Performance Optimizations
 
 | Optimization | Detail | Impact |
 |---|---|---|
@@ -154,7 +129,7 @@ restaurant-service consumer ──▶ updates DB + invalidates Redis cache
 
 ---
 
-## 🔒 Security
+##  Security
 
 - **JWT** authentication on all protected routes
 - **Role-based access control** — CUSTOMER, RESTAURANT, RIDER, ADMIN
@@ -165,7 +140,7 @@ restaurant-service consumer ──▶ updates DB + invalidates Redis cache
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 food-delivery/
@@ -200,7 +175,7 @@ food-delivery/
 
 ---
 
-## 🐳 Docker Images
+##  Docker Images
 
 All images are published on Docker Hub:
 
@@ -217,7 +192,7 @@ krishnaandbhuvan/client
 
 ---
 
-## ☸️ Kubernetes
+##  Kubernetes
 
 K8s manifests include **Horizontal Pod Autoscalers** that auto-scale based on CPU:
 
@@ -244,7 +219,7 @@ kubectl apply -f k8s/hpa.yaml
 
 ---
 
-## 🛠️ Local Setup
+##  Local Setup
 
 ### Prerequisites
 - Node.js 20+
@@ -319,7 +294,7 @@ http://localhost:5173
 
 ---
 
-## 🔗 API Reference
+##  API Reference
 
 ### Auth
 | Method | Endpoint | Access |
@@ -356,7 +331,7 @@ http://localhost:5173
 
 ---
 
-## 📊 Health Check
+##  Health Check
 
 ```bash
 curl http://localhost:4000/health/services
@@ -377,7 +352,7 @@ curl http://localhost:4000/health/services
 
 ---
 
-## 👨‍💻 Author
+##  Author
 
 **Krishna & Bhuvan**
 - GitHub: [@Krishnabhuvan](https://github.com/Krishnabhuvan)

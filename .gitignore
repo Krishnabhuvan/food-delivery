@@ -20,3 +20,4 @@ dist/
 
 # K8s secrets (contains real DB URLs)
 k8s/secrets.yaml
+minikube
