@@ -6,6 +6,6 @@ RUN npm ci
 RUN npx prisma generate
 COPY . .
 RUN npm run build
-COPY src/generated ./dist/generated
-EXPOSE 4002
+RUN cp -r src/generated dist/generated
+EXPOSE 4004
 CMD ["node", "dist/index.js"]
