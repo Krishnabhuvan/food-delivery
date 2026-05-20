@@ -56,8 +56,7 @@ useEffect(() => {
     .finally(() => setPageLoading(false));
 
   const token = localStorage.getItem('token');
-  const socket = io('http://localhost:4005', { auth: { token } });
-
+  const socket = io(import.meta.env.VITE_REALTIME_URL || 'http://localhost:4005', { auth: { token } });
   socket.on('new-order', () => {
     fetchOrders();
   });

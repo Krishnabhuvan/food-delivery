@@ -40,8 +40,7 @@ export default function Orders() {
     fetchOrders();
 
     const token = localStorage.getItem('token');
-    const socket = io('http://localhost:4005', { auth: { token } });
-
+    const socket = io(import.meta.env.VITE_REALTIME_URL || 'http://localhost:4005', { auth: { token } });
     socket.on('order-status-updated', (data: any) => {
       setOrders(prev => prev.map(o =>
         o.id === data.orderId ? { ...o, status: data.status } : o

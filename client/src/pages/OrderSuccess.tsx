@@ -147,8 +147,7 @@ export default function OrderSuccess() {
       if (found) { setOrder(found); setStatus(found.status); }
     });
     const token = localStorage.getItem('token');
-    const socket = io('http://localhost:4005', { auth: { token } });
-    socket.emit('join-order', id);
+    const socket = io(import.meta.env.VITE_REALTIME_URL || 'http://localhost:4005', { auth: { token } });    socket.emit('join-order', id);
     socket.on('order-status-updated', (data: any) => {
       if (data.orderId === id) setStatus(data.status);
     });
