@@ -72,5 +72,5 @@ app.use('/api/admin', createProxyMiddleware({ target: ADMIN_SERVICE, changeOrigi
 app.use('/api/upload', createProxyMiddleware({ target: UTILS_SERVICE, changeOrigin: true }));
 app.use('/api/payment', createProxyMiddleware({ target: UTILS_SERVICE, changeOrigin: true }));
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Gateway running on port ${PORT}`));
+const PORT = parseInt(process.env.PORT || '4000', 10);
+app.listen(PORT, '0.0.0.0', () => console.log(`Gateway running on port ${PORT}`));
