@@ -46,6 +46,18 @@ export default function AdminDashboard() {
     }
   };
 
+const deleteRestaurant = async (id: string, name: string) => {
+  if (!window.confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) return;
+  try {
+    await api.delete(`/api/admin/restaurants/${id}`);
+    setMessage('Restaurant deleted.');
+    fetchRestaurants();
+    fetchLogs();
+  } catch {
+    setMessage('Failed to delete restaurant.');
+  }
+};
+
   const fetchRestaurants = async () => {
   try {
     const res = await api.get('/api/restaurants/all');
@@ -181,12 +193,18 @@ export default function AdminDashboard() {
                   </span>
                 </div>
               </div>
-              {!r.isVerified && (
-                <button onClick={() => verifyRestaurant(r.id)}
-                  style={{ padding: '8px 16px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Verify ✓
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+  {!r.isVerified && (
+    <button onClick={() => verifyRestaurant(r.id)}
+      style={{ padding: '8px 16px', background: '#22c55e', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      Verify ✓
+    </button>
+  )}
+  <button onClick={() => deleteRestaurant(r.id, r.name)}
+    style={{ padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+    🗑 Delete
+  </button>
+</div>
             </div>
           ))}
         </div>

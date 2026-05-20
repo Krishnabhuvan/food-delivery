@@ -74,3 +74,24 @@ export const getLogs = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+export const deleteRestaurant = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params as { id: string };
+
+    await prisma.adminLog.create({
+      data: {
+        adminId: req.user!.id,
+        action: 'DELETE_RESTAURANT',
+        targetId: String(id),
+        targetType: 'RESTAURANT'
+      }
+    });
+
+    await publish('restaurant.delete', { restaurantId: id });
+
+    res.json({ message: 'Restaurant deleted' });
+  } catch (err) {
+    console.error('DELETE RESTAURANT ERROR:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
