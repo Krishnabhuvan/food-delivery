@@ -3,13 +3,11 @@ import prisma from '../lib/prisma';
 
 export const addMenuItem = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, category } = req.body;
-
+    const { name, description, price, category, imageUrl } = req.body;
     const restaurant = await prisma.restaurant.findUnique({ where: { ownerId: req.user!.id } });
     if (!restaurant) return res.status(404).json({ message: 'Restaurant not found' });
-
     const item = await prisma.menuItem.create({
-      data: { restaurantId: restaurant.id, name, description, price, category }
+      data: { restaurantId: restaurant.id, name, description, price, category, imageUrl: imageUrl || null }
     });
     res.status(201).json(item);
   } catch (err) {
