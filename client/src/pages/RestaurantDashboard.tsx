@@ -10,6 +10,7 @@ interface MenuItem {
   price: number;
   category: string;
   isAvailable: boolean;
+  imageUrl?: string;
 }
 
 interface Order {
@@ -39,40 +40,37 @@ export default function RestaurantDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [form, setForm] = useState({ name: '', description: '', price: '', category: '' });
+  const [itemImage, setItemImage] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [setupForm, setSetupForm] = useState({ name: '', description: '', address: '', phone: '' });
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-useEffect(() => {
-  api.get('/api/restaurants/me')
-    .then(res => {
-      setRestaurant(res.data);
-      setMenuItems(res.data.menuItems);
-      fetchOrders();
-    })
-    .catch(() => setRestaurant(null))
-    .finally(() => setPageLoading(false));
+  useEffect(() => {
+    api.get('/api/restaurants/me')
+      .then(res => {
+        setRestaurant(res.data);
+        setMenuItems(res.data.menuItems);
+        fetchOrders();
+      })
+      .catch(() => setRestaurant(null))
+      .finally(() => setPageLoading(false));
 
-  const token = localStorage.getItem('token');
-  const socket = io(import.meta.env.VITE_REALTIME_URL || 'http://localhost:4005', { auth: { token } });
-  socket.on('new-order', () => {
-    fetchOrders();
-  });
+    const token = localStorage.getItem('token');
+    const socket = io(import.meta.env.VITE_REALTIME_URL || 'http://localhost:4005', { auth: { token } });
+    socket.on('new-order', () => { fetchOrders(); });
+    socket.on('order-status-updated', () => { fetchOrders(); });
+    return () => { socket.disconnect(); };
+  }, []);
 
-  socket.on('order-status-updated', () => {
-    fetchOrders();
-  });
-
-  return () => { socket.disconnect(); };
-}, []);
   const fetchOrders = async () => {
-  try {
-    const res = await api.get('/api/orders/restaurant-orders?limit=10&page=1');
-    setOrders(res.data.orders); // was res.data
-  } catch {}
-};
+    try {
+      const res = await api.get('/api/orders/restaurant-orders?limit=10&page=1');
+      setOrders(res.data.orders);
+    } catch {}
+  };
 
   const fetchMenu = async () => {
     try {
@@ -109,16 +107,32 @@ useEffect(() => {
   const addMenuItem = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setUploading(true);
     setMessage('');
     try {
-      await api.post('/api/menu', { ...form, price: parseFloat(form.price) });
+      let imageUrl = '';
+      if (itemImage) {
+        const formData = new FormData();
+        formData.append('image', itemImage);
+        const uploadRes = await api.post('/api/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        imageUrl = uploadRes.data.url;
+      }
+      await api.post('/api/menu', {
+        ...form,
+        price: parseFloat(form.price),
+        imageUrl
+      });
       setMessage('Menu item added!');
       setForm({ name: '', description: '', price: '', category: '' });
+      setItemImage(null);
       fetchMenu();
     } catch {
       setMessage('Failed to add item.');
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -185,7 +199,8 @@ useEffect(() => {
       </p>
     </div>
   );
-// Pending verification screen
+
+  // Pending verification screen
   if (restaurant && !restaurant.isVerified) return (
     <div style={{ maxWidth: 500, margin: '100px auto', padding: '2rem', border: '1px solid #eee', borderRadius: 12, textAlign: 'center' }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
@@ -203,8 +218,6 @@ useEffect(() => {
     </div>
   );
 
- 
-
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
       {/* Header */}
@@ -216,44 +229,42 @@ useEffect(() => {
         </button>
       </div>
 
-     
-
-{/* Status badges + Toggle Open */}
-<div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
-  <span style={{
-    padding: '4px 10px', borderRadius: 20, fontSize: 12,
-    background: restaurant.isVerified ? '#dcfce7' : '#fef9c3',
-    color: restaurant.isVerified ? '#16a34a' : '#ca8a04'
-  }}>
-    {restaurant.isVerified ? '✓ Verified' : '⏳ Pending verification'}
-  </span>
-  <span style={{
-    padding: '4px 10px', borderRadius: 20, fontSize: 12,
-    background: restaurant.isOpen ? '#dcfce7' : '#fee2e2',
-    color: restaurant.isOpen ? '#16a34a' : '#dc2626'
-  }}>
-    {restaurant.isOpen ? '● Open' : '● Closed'}
-  </span>
-  <button
-    onClick={async () => {
-      const action = restaurant.isOpen ? 'close' : 'open';
-      if (!window.confirm(`Are you sure you want to ${action} your restaurant?`)) return;
-      try {
-        const res = await api.patch('/api/restaurants/toggle-open');
-        setRestaurant(prev => prev ? { ...prev, isOpen: res.data.isOpen } : prev);
-        setMessage(res.data.isOpen ? 'Restaurant is now Open!' : 'Restaurant is now Closed.');
-      } catch {
-        setMessage('Failed to toggle status.');
-      }
-    }}
-    style={{
-      padding: '4px 14px', fontSize: 12,
-      background: restaurant.isOpen ? '#ef4444' : '#22c55e',
-      color: '#fff', border: 'none', borderRadius: 20, cursor: 'pointer'
-    }}>
-    {restaurant.isOpen ? 'Close Restaurant' : 'Open Restaurant'}
-  </button>
-</div>
+      {/* Status badges + Toggle Open */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        <span style={{
+          padding: '4px 10px', borderRadius: 20, fontSize: 12,
+          background: restaurant.isVerified ? '#dcfce7' : '#fef9c3',
+          color: restaurant.isVerified ? '#16a34a' : '#ca8a04'
+        }}>
+          {restaurant.isVerified ? '✓ Verified' : '⏳ Pending verification'}
+        </span>
+        <span style={{
+          padding: '4px 10px', borderRadius: 20, fontSize: 12,
+          background: restaurant.isOpen ? '#dcfce7' : '#fee2e2',
+          color: restaurant.isOpen ? '#16a34a' : '#dc2626'
+        }}>
+          {restaurant.isOpen ? '● Open' : '● Closed'}
+        </span>
+        <button
+          onClick={async () => {
+            const action = restaurant.isOpen ? 'close' : 'open';
+            if (!window.confirm(`Are you sure you want to ${action} your restaurant?`)) return;
+            try {
+              const res = await api.patch('/api/restaurants/toggle-open');
+              setRestaurant(prev => prev ? { ...prev, isOpen: res.data.isOpen } : prev);
+              setMessage(res.data.isOpen ? 'Restaurant is now Open!' : 'Restaurant is now Closed.');
+            } catch {
+              setMessage('Failed to toggle status.');
+            }
+          }}
+          style={{
+            padding: '4px 14px', fontSize: 12,
+            background: restaurant.isOpen ? '#ef4444' : '#22c55e',
+            color: '#fff', border: 'none', borderRadius: 20, cursor: 'pointer'
+          }}>
+          {restaurant.isOpen ? 'Close Restaurant' : 'Open Restaurant'}
+        </button>
+      </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: '2rem' }}>
@@ -275,10 +286,7 @@ useEffect(() => {
             <div key={order.id} style={{ border: '1px solid #eee', borderRadius: 10, padding: '1rem', marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontWeight: 600 }}>₹{order.totalAmount}</span>
-                <span style={{
-                  padding: '3px 10px', borderRadius: 20, fontSize: 12,
-                  background: '#fff7ed', color: '#f97316'
-                }}>
+                <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, background: '#fff7ed', color: '#f97316' }}>
                   {order.status}
                 </span>
               </div>
@@ -315,6 +323,13 @@ useEffect(() => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
               {menuItems.map(item => (
                 <div key={item.id} style={{ border: '1px solid #eee', borderRadius: 10, padding: '1rem' }}>
+                  {item.imageUrl && (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }}
+                    />
+                  )}
                   <h4 style={{ marginBottom: 4 }}>{item.name}</h4>
                   <p style={{ color: '#f97316', fontWeight: 600 }}>₹{item.price}</p>
                   <p style={{ color: '#999', fontSize: 13 }}>{item.category}</p>
@@ -358,9 +373,25 @@ useEffect(() => {
               />
             </div>
           ))}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ fontWeight: 500 }}>Item Image (optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e => setItemImage(e.target.files?.[0] || null)}
+              style={{ display: 'block', marginTop: 4 }}
+            />
+            {itemImage && (
+              <img
+                src={URL.createObjectURL(itemImage)}
+                alt="preview"
+                style={{ marginTop: 8, width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }}
+              />
+            )}
+          </div>
           <button type="submit" disabled={loading}
             style={{ padding: '10px 24px', background: '#f97316', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 15 }}>
-            {loading ? 'Adding...' : 'Add Item'}
+            {loading ? (uploading ? 'Uploading...' : 'Adding...') : 'Add Item'}
           </button>
         </form>
       )}
