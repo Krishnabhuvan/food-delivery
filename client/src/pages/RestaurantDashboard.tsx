@@ -7,6 +7,7 @@ import { io } from 'socket.io-client';
 interface MenuItem {
   id: string;
   name: string;
+  description?: string;
   price: number;
   category: string;
   isAvailable: boolean;
@@ -29,6 +30,7 @@ interface Restaurant {
   phone: string;
   isVerified: boolean;
   isOpen: boolean;
+  imageUrl?: string;
   menuItems: MenuItem[];
 }
 
@@ -47,6 +49,16 @@ export default function RestaurantDashboard() {
   const [setupLoading, setSetupLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState('');
+
+  // Edit state
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: '' });
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Restaurant image upload
+  const [restaurantImage, setRestaurantImage] = useState<File | null>(null);
+  const [restaurantImageUploading, setRestaurantImageUploading] = useState(false);
 
   useEffect(() => {
     api.get('/api/restaurants/me')
@@ -76,9 +88,19 @@ export default function RestaurantDashboard() {
     try {
       const res = await api.get('/api/restaurants/me');
       setMenuItems(res.data.menuItems);
+      setRestaurant(res.data);
     } catch {
       console.error('Failed to fetch menu');
     }
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const res = await api.post('/api/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return res.data.url;
   };
 
   const createRestaurant = async (e: React.FormEvent) => {
@@ -94,8 +116,7 @@ export default function RestaurantDashboard() {
     } catch (err: any) {
       const errors = err.response?.data?.errors;
       if (errors) {
-        const messages = Object.values(errors).flat().join(', ');
-        setMessage(messages);
+        setMessage(Object.values(errors).flat().join(', '));
       } else {
         setMessage(err.response?.data?.message || 'Failed to create restaurant.');
       }
@@ -112,12 +133,7 @@ export default function RestaurantDashboard() {
     try {
       let imageUrl = '';
       if (itemImage) {
-        const formData = new FormData();
-        formData.append('image', itemImage);
-        const uploadRes = await api.post('/api/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        imageUrl = uploadRes.data.url;
+        imageUrl = await uploadImage(itemImage);
       }
       await api.post('/api/menu', {
         ...form,
@@ -133,6 +149,65 @@ export default function RestaurantDashboard() {
     } finally {
       setLoading(false);
       setUploading(false);
+    }
+  };
+
+  const startEdit = (item: MenuItem) => {
+    setEditingItem(item);
+    setEditForm({
+      name: item.name,
+      description: item.description || '',
+      price: String(item.price),
+      category: item.category
+    });
+    setEditImage(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editingItem) return;
+    setEditLoading(true);
+    try {
+      let imageUrl = editingItem.imageUrl || '';
+      if (editImage) {
+        imageUrl = await uploadImage(editImage);
+      }
+      await api.patch(`/api/menu/${editingItem.id}`, {
+        ...editForm,
+        price: parseFloat(editForm.price),
+        imageUrl
+      });
+      setEditingItem(null);
+      fetchMenu();
+    } catch {
+      alert('Failed to update item.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const deleteMenuItem = async (id: string, name: string) => {
+    if (!window.confirm(`Delete "${name}"?`)) return;
+    try {
+      await api.delete(`/api/menu/${id}`);
+      fetchMenu();
+    } catch {
+      alert('Failed to delete item.');
+    }
+  };
+
+  const uploadRestaurantImage = async () => {
+    if (!restaurantImage) return;
+    setRestaurantImageUploading(true);
+    try {
+      const imageUrl = await uploadImage(restaurantImage);
+      await api.patch('/api/restaurants/me', { imageUrl });
+      setRestaurantImage(null);
+      fetchMenu();
+      setMessage('Restaurant image updated!');
+    } catch {
+      setMessage('Failed to upload restaurant image.');
+    } finally {
+      setRestaurantImageUploading(false);
     }
   };
 
@@ -160,7 +235,6 @@ export default function RestaurantDashboard() {
     </div>
   );
 
-  // No restaurant yet — show setup screen
   if (!restaurant) return (
     <div style={{ maxWidth: 500, margin: '100px auto', padding: '2rem', border: '1px solid #eee', borderRadius: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -200,16 +274,12 @@ export default function RestaurantDashboard() {
     </div>
   );
 
-  // Pending verification screen
   if (restaurant && !restaurant.isVerified) return (
     <div style={{ maxWidth: 500, margin: '100px auto', padding: '2rem', border: '1px solid #eee', borderRadius: 12, textAlign: 'center' }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
       <h2 style={{ marginBottom: 8 }}>Pending Verification</h2>
       <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-        Your restaurant <strong>{restaurant.name}</strong> is under review. An admin will verify it shortly and it will appear on the platform.
-      </p>
-      <p style={{ color: '#9ca3af', fontSize: 13, marginBottom: '1.5rem' }}>
-        You will be able to manage your menu and orders once verified.
+        Your restaurant <strong>{restaurant.name}</strong> is under review.
       </p>
       <button onClick={() => { logout(); navigate('/login'); }}
         style={{ padding: '8px 20px', background: '#eee', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
@@ -220,6 +290,62 @@ export default function RestaurantDashboard() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
+
+      {/* Edit Modal */}
+      {editingItem && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '2rem', width: 400, maxWidth: '90vw' }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>Edit Menu Item</h3>
+            {[
+              { field: 'name', placeholder: 'Item name', type: 'text' },
+              { field: 'description', placeholder: 'Description', type: 'text' },
+              { field: 'price', placeholder: 'Price', type: 'number' },
+              { field: 'category', placeholder: 'Category', type: 'text' }
+            ].map(({ field, placeholder, type }) => (
+              <div key={field} style={{ marginBottom: '1rem' }}>
+                <label style={{ textTransform: 'capitalize', fontWeight: 500, fontSize: 13 }}>{field}</label>
+                <input
+                  value={editForm[field as keyof typeof editForm]}
+                  onChange={e => setEditForm({ ...editForm, [field]: e.target.value })}
+                  placeholder={placeholder}
+                  type={type}
+                  style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4, borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
+                />
+              </div>
+            ))}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontWeight: 500, fontSize: 13 }}>
+                {editingItem.imageUrl ? 'Replace Image (optional)' : 'Add Image (optional)'}
+              </label>
+              {editingItem.imageUrl && !editImage && (
+                <img src={editingItem.imageUrl} alt="current"
+                  style={{ display: 'block', width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginTop: 6, marginBottom: 6 }} />
+              )}
+              <input type="file" accept="image/*"
+                onChange={e => setEditImage(e.target.files?.[0] || null)}
+                style={{ display: 'block', marginTop: 6 }} />
+              {editImage && (
+                <img src={URL.createObjectURL(editImage)} alt="preview"
+                  style={{ marginTop: 8, width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={saveEdit} disabled={editLoading}
+                style={{ flex: 1, padding: '10px', background: '#f97316', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+                {editLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button onClick={() => setEditingItem(null)}
+                style={{ flex: 1, padding: '10px', background: '#eee', color: '#333', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <h2>🍽️ {restaurant.name}</h2>
@@ -229,6 +355,29 @@ export default function RestaurantDashboard() {
         </button>
       </div>
 
+      {/* Restaurant Cover Image */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        {restaurant.imageUrl ? (
+          <img src={restaurant.imageUrl} alt="Restaurant cover"
+            style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, marginBottom: 8 }} />
+        ) : (
+          <div style={{ width: '100%', height: 100, background: '#f3f4f6', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#9ca3af', fontSize: 14 }}>
+            No cover image
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input type="file" accept="image/*"
+            onChange={e => setRestaurantImage(e.target.files?.[0] || null)}
+            style={{ fontSize: 13 }} />
+          {restaurantImage && (
+            <button onClick={uploadRestaurantImage} disabled={restaurantImageUploading}
+              style={{ padding: '6px 14px', background: '#f97316', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' }}>
+              {restaurantImageUploading ? 'Uploading...' : 'Upload Cover'}
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Status badges + Toggle Open */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
         <span style={{
@@ -236,23 +385,21 @@ export default function RestaurantDashboard() {
           background: restaurant.isVerified ? '#dcfce7' : '#fef9c3',
           color: restaurant.isVerified ? '#16a34a' : '#ca8a04'
         }}>
-          {restaurant.isVerified ? '✓ Verified' : '⏳ Pending verification'}
+          {restaurant.isVerified ? '✔ Verified' : '⏳ Pending verification'}
         </span>
         <span style={{
           padding: '4px 10px', borderRadius: 20, fontSize: 12,
           background: restaurant.isOpen ? '#dcfce7' : '#fee2e2',
           color: restaurant.isOpen ? '#16a34a' : '#dc2626'
         }}>
-          {restaurant.isOpen ? '● Open' : '● Closed'}
+          {restaurant.isOpen ? '🟢 Open' : '🔴 Closed'}
         </span>
         <button
           onClick={async () => {
-            const action = restaurant.isOpen ? 'close' : 'open';
-            if (!window.confirm(`Are you sure you want to ${action} your restaurant?`)) return;
+            if (!window.confirm(`Are you sure you want to ${restaurant.isOpen ? 'close' : 'open'} your restaurant?`)) return;
             try {
               const res = await api.patch('/api/restaurants/toggle-open');
               setRestaurant(prev => prev ? { ...prev, isOpen: res.data.isOpen } : prev);
-              setMessage(res.data.isOpen ? 'Restaurant is now Open!' : 'Restaurant is now Closed.');
             } catch {
               setMessage('Failed to toggle status.');
             }
@@ -265,6 +412,12 @@ export default function RestaurantDashboard() {
           {restaurant.isOpen ? 'Close Restaurant' : 'Open Restaurant'}
         </button>
       </div>
+
+      {message && (
+        <p style={{ color: message.toLowerCase().includes('fail') ? 'red' : '#22c55e', marginBottom: '1rem' }}>
+          {message}
+        </p>
+      )}
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: '2rem' }}>
@@ -322,24 +475,30 @@ export default function RestaurantDashboard() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
               {menuItems.map(item => (
-                <div key={item.id} style={{ border: '1px solid #eee', borderRadius: 10, padding: '1rem' }}>
-                  {item.imageUrl && (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }}
-                    />
+                <div key={item.id} style={{ border: '1px solid #eee', borderRadius: 10, overflow: 'hidden' }}>
+                  {item.imageUrl ? (
+                    <img src={item.imageUrl} alt={item.name}
+                      style={{ width: '100%', height: 130, objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '100%', height: 80, background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d1d5db', fontSize: 28 }}>
+                      🍽️
+                    </div>
                   )}
-                  <h4 style={{ marginBottom: 4 }}>{item.name}</h4>
-                  <p style={{ color: '#f97316', fontWeight: 600 }}>₹{item.price}</p>
-                  <p style={{ color: '#999', fontSize: 13 }}>{item.category}</p>
-                  <span style={{
-                    fontSize: 11, padding: '2px 8px', borderRadius: 10,
-                    background: item.isAvailable ? '#dcfce7' : '#fee2e2',
-                    color: item.isAvailable ? '#16a34a' : '#dc2626'
-                  }}>
-                    {item.isAvailable ? 'Available' : 'Unavailable'}
-                  </span>
+                  <div style={{ padding: '0.75rem' }}>
+                    <h4 style={{ marginBottom: 2, fontSize: 15 }}>{item.name}</h4>
+                    <p style={{ color: '#f97316', fontWeight: 600, marginBottom: 2 }}>₹{item.price}</p>
+                    <p style={{ color: '#999', fontSize: 12, marginBottom: 8 }}>{item.category}</p>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => startEdit(item)}
+                        style={{ flex: 1, padding: '5px 0', background: '#f97316', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer', fontSize: 13 }}>
+                        ✏️ Edit
+                      </button>
+                      <button onClick={() => deleteMenuItem(item.id, item.name)}
+                        style={{ flex: 1, padding: '5px 0', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: 5, cursor: 'pointer', fontSize: 13 }}>
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -375,18 +534,12 @@ export default function RestaurantDashboard() {
           ))}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ fontWeight: 500 }}>Item Image (optional)</label>
-            <input
-              type="file"
-              accept="image/*"
+            <input type="file" accept="image/*"
               onChange={e => setItemImage(e.target.files?.[0] || null)}
-              style={{ display: 'block', marginTop: 4 }}
-            />
+              style={{ display: 'block', marginTop: 4 }} />
             {itemImage && (
-              <img
-                src={URL.createObjectURL(itemImage)}
-                alt="preview"
-                style={{ marginTop: 8, width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }}
-              />
+              <img src={URL.createObjectURL(itemImage)} alt="preview"
+                style={{ marginTop: 8, width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }} />
             )}
           </div>
           <button type="submit" disabled={loading}
