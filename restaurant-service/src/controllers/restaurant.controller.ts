@@ -24,14 +24,39 @@ export const createRestaurant = async (req: Request, res: Response) => {
     if (existing) return res.status(409).json({ message: 'Restaurant already exists for this account' });
 
     const restaurant = await prisma.restaurant.create({
-  data: { ownerId, name, description, address, phone, isVerified: false, isOpen: false }
-});
+      data: { ownerId, name, description, address, phone, isVerified: false, isOpen: false }
+    });
 
     await redis.del('restaurants:all');
-
     res.status(201).json(restaurant);
   } catch (err) {
     console.error('CREATE RESTAURANT ERROR:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const updateRestaurant = async (req: Request, res: Response) => {
+  try {
+    const ownerId = (req as any).user.id;
+    const { name, description, address, phone } = req.body;
+
+    const restaurant = await prisma.restaurant.findUnique({ where: { ownerId } });
+    if (!restaurant) return res.status(404).json({ message: 'Restaurant not found' });
+
+    const updated = await prisma.restaurant.update({
+      where: { ownerId },
+      data: {
+        ...(name && { name }),
+        ...(description && { description }),
+        ...(address && { address }),
+        ...(phone && { phone })
+      }
+    });
+
+    await redis.del('restaurants:all');
+    res.json(updated);
+  } catch (err) {
+    console.error('UPDATE RESTAURANT ERROR:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
