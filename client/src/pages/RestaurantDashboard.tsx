@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
-const CLOUDINARY_CLOUD_NAME = 'dpc1bqc11';
+;
 
 interface MenuItem {
   id: string;
@@ -51,7 +51,7 @@ export default function RestaurantDashboard() {
   const [pageLoading, setPageLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-  // Edit state
+  // Edit menu item state
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [editForm, setEditForm] = useState({ name: '', description: '', price: '', category: '' });
   const [editImage, setEditImage] = useState<File | null>(null);
@@ -60,6 +60,11 @@ export default function RestaurantDashboard() {
   // Restaurant image upload
   const [restaurantImage, setRestaurantImage] = useState<File | null>(null);
   const [restaurantImageUploading, setRestaurantImageUploading] = useState(false);
+  
+  // Edit restaurant details state
+  const [showEditRestaurant, setShowEditRestaurant] = useState(false);
+  const [editRestaurantForm, setEditRestaurantForm] = useState({ name: '', description: '', address: '', phone: '' });
+  const [editRestaurantLoading, setEditRestaurantLoading] = useState(false);
 
   useEffect(() => {
     api.get('/api/restaurants/me')
@@ -196,6 +201,9 @@ export default function RestaurantDashboard() {
     }
   };
 
+ 
+
+
   const uploadRestaurantImage = async () => {
     if (!restaurantImage) return;
     setRestaurantImageUploading(true);
@@ -209,6 +217,34 @@ export default function RestaurantDashboard() {
       setMessage('Failed to upload restaurant image.');
     } finally {
       setRestaurantImageUploading(false);
+    }
+  };
+
+  // Open edit restaurant modal and prefill form
+  const openEditRestaurant = () => {
+    if (!restaurant) return;
+    setEditRestaurantForm({
+      name: restaurant.name,
+      description: restaurant.description,
+      address: restaurant.address,
+      phone: restaurant.phone,
+    });
+    setShowEditRestaurant(true);
+  };
+
+  // Save restaurant details
+  const saveRestaurantDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditRestaurantLoading(true);
+    try {
+      const res = await api.patch('/api/restaurants/me', editRestaurantForm);
+      setRestaurant(prev => prev ? { ...prev, ...res.data } : prev);
+      setShowEditRestaurant(false);
+      setMessage('Restaurant details updated!');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to update restaurant details.');
+    } finally {
+      setEditRestaurantLoading(false);
     }
   };
 
@@ -292,12 +328,9 @@ export default function RestaurantDashboard() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
 
-      {/* Edit Modal */}
+      {/* ── Edit Menu Item Modal ── */}
       {editingItem && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: '2rem', width: 400, maxWidth: '90vw' }}>
             <h3 style={{ marginBottom: '1.5rem' }}>Edit Menu Item</h3>
             {[
@@ -347,13 +380,67 @@ export default function RestaurantDashboard() {
         </div>
       )}
 
+      {/* ── Edit Restaurant Details Modal ── */}
+      {showEditRestaurant && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '2rem', width: 440, maxWidth: '90vw' }}>
+            <h3 style={{ marginBottom: '1.5rem' }}>Edit Restaurant Details</h3>
+            <form onSubmit={saveRestaurantDetails}>
+              {[
+                { field: 'name', placeholder: 'Restaurant name', label: 'Name' },
+                { field: 'description', placeholder: 'Short description', label: 'Description' },
+                { field: 'address', placeholder: 'Full address', label: 'Address' },
+                { field: 'phone', placeholder: 'Phone number', label: 'Phone' },
+              ].map(({ field, placeholder, label }) => (
+                <div key={field} style={{ marginBottom: '1rem' }}>
+                  <label style={{ fontWeight: 500, fontSize: 13 }}>{label}</label>
+                  <input
+                    value={editRestaurantForm[field as keyof typeof editRestaurantForm]}
+                    onChange={e => setEditRestaurantForm({ ...editRestaurantForm, [field]: e.target.value })}
+                    placeholder={placeholder}
+                    style={{ display: 'block', width: '100%', padding: '8px', marginTop: 4, borderRadius: 6, border: '1px solid #ccc', boxSizing: 'border-box' }}
+                    required
+                  />
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 8, marginTop: '1.5rem' }}>
+                <button type="submit" disabled={editRestaurantLoading}
+                  style={{ flex: 1, padding: '10px', background: '#f97316', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+                  {editRestaurantLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button type="button" onClick={() => setShowEditRestaurant(false)}
+                  style={{ flex: 1, padding: '10px', background: '#eee', color: '#333', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
         <h2>🍽️ {restaurant.name}</h2>
+
         <button onClick={() => { logout(); navigate('/login'); }}
           style={{ padding: '8px 16px', background: '#eee', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
           Logout
         </button>
+      </div>
+
+      {/* Restaurant info + Edit Details button */}
+      <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 10, padding: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <p style={{ margin: '0 0 4px', fontSize: 14, color: '#374151' }}>📍 {restaurant.address}</p>
+            <p style={{ margin: '0 0 4px', fontSize: 14, color: '#374151' }}>📞 {restaurant.phone}</p>
+            <p style={{ margin: 0, fontSize: 14, color: '#6b7280' }}>💬 {restaurant.description}</p>
+          </div>
+          <button onClick={openEditRestaurant}
+            style={{ padding: '7px 16px', background: '#f97316', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap' }}>
+            ✏️ Edit Details
+          </button>
+        </div>
       </div>
 
       {/* Restaurant Cover Image */}
@@ -381,18 +468,10 @@ export default function RestaurantDashboard() {
 
       {/* Status badges + Toggle Open */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
-        <span style={{
-          padding: '4px 10px', borderRadius: 20, fontSize: 12,
-          background: restaurant.isVerified ? '#dcfce7' : '#fef9c3',
-          color: restaurant.isVerified ? '#16a34a' : '#ca8a04'
-        }}>
+        <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: restaurant.isVerified ? '#dcfce7' : '#fef9c3', color: restaurant.isVerified ? '#16a34a' : '#ca8a04' }}>
           {restaurant.isVerified ? '✔ Verified' : '⏳ Pending verification'}
         </span>
-        <span style={{
-          padding: '4px 10px', borderRadius: 20, fontSize: 12,
-          background: restaurant.isOpen ? '#dcfce7' : '#fee2e2',
-          color: restaurant.isOpen ? '#16a34a' : '#dc2626'
-        }}>
+        <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, background: restaurant.isOpen ? '#dcfce7' : '#fee2e2', color: restaurant.isOpen ? '#16a34a' : '#dc2626' }}>
           {restaurant.isOpen ? '🟢 Open' : '🔴 Closed'}
         </span>
         <button
@@ -405,11 +484,7 @@ export default function RestaurantDashboard() {
               setMessage('Failed to toggle status.');
             }
           }}
-          style={{
-            padding: '4px 14px', fontSize: 12,
-            background: restaurant.isOpen ? '#ef4444' : '#22c55e',
-            color: '#fff', border: 'none', borderRadius: 20, cursor: 'pointer'
-          }}>
+          style={{ padding: '4px 14px', fontSize: 12, background: restaurant.isOpen ? '#ef4444' : '#22c55e', color: '#fff', border: 'none', borderRadius: 20, cursor: 'pointer' }}>
           {restaurant.isOpen ? 'Close Restaurant' : 'Open Restaurant'}
         </button>
       </div>
@@ -453,12 +528,7 @@ export default function RestaurantDashboard() {
               <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                 {['ACCEPTED', 'PREPARING', 'READY', 'DELIVERED'].map(s => (
                   <button key={s} onClick={() => updateStatus(order.id, s)}
-                    style={{
-                      padding: '4px 10px', fontSize: 12,
-                      background: order.status === s ? '#f97316' : '#eee',
-                      color: order.status === s ? '#fff' : '#333',
-                      border: 'none', borderRadius: 4, cursor: 'pointer'
-                    }}>
+                    style={{ padding: '4px 10px', fontSize: 12, background: order.status === s ? '#f97316' : '#eee', color: order.status === s ? '#fff' : '#333', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
                     {s}
                   </button>
                 ))}
@@ -478,8 +548,7 @@ export default function RestaurantDashboard() {
               {menuItems.map(item => (
                 <div key={item.id} style={{ border: '1px solid #eee', borderRadius: 10, overflow: 'hidden' }}>
                   {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.name}
-                      style={{ width: '100%', height: 130, objectFit: 'cover' }} />
+                    <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: 130, objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: '100%', height: 80, background: '#f9fafb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d1d5db', fontSize: 28 }}>
                       🍽️
