@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
 import { publish } from '../events/publisher';
+import axios from 'axios';
 
 const verifyRestaurantSchema = z.object({
   restaurantId: z.string().uuid('Invalid restaurant ID')
@@ -78,6 +79,8 @@ export const deleteRestaurant = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
 
+    await axios.delete(`${process.env.RESTAURANT_SERVICE_URL}/internal/restaurants/${id}`);
+
     await prisma.adminLog.create({
       data: {
         adminId: req.user!.id,
@@ -86,8 +89,6 @@ export const deleteRestaurant = async (req: Request, res: Response) => {
         targetType: 'RESTAURANT'
       }
     });
-
-    await publish('restaurant.delete', { restaurantId: id });
 
     res.json({ message: 'Restaurant deleted' });
   } catch (err) {
