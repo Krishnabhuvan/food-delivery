@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createRestaurant, updateRestaurant, getMyRestaurant, getAllRestaurants, getAllRestaurantsAdmin, toggleOpen, verifyRestaurantById } from '../controllers/restaurant.controller';
+import { createRestaurant, updateRestaurant, getMyRestaurant, getAllRestaurants, getAllRestaurantsAdmin, toggleOpen, verifyRestaurantById, deleteRestaurantById  } from '../controllers/restaurant.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -11,5 +11,5 @@ router.patch('/me', protect, authorize('RESTAURANT'), updateRestaurant);
 router.get('/all', protect, authorize('ADMIN'), getAllRestaurantsAdmin);
 router.patch('/toggle-open', protect, authorize('RESTAURANT'), toggleOpen);
 router.patch('/:id/verify', protect, authorize('ADMIN'), verifyRestaurantById);
-
+router.delete('/:id', protect, authorize('ADMIN'), deleteRestaurantById);
 export default router;

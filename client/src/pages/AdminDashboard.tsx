@@ -49,7 +49,7 @@ export default function AdminDashboard() {
 const deleteRestaurant = async (id: string, name: string) => {
   if (!window.confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) return;
   try {
-    await api.delete(`/api/admin/restaurants/${id}`);
+    await api.delete(`/api/restaurants/${id}`);
     setMessage('Restaurant deleted.');
     fetchRestaurants();
     fetchLogs();

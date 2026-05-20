@@ -200,3 +200,15 @@ export const completeDelivery = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const deleteRestaurantById = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params['id']);
+    await prisma.restaurant.delete({ where: { id } });
+    await redis.del('restaurants:all');
+    res.json({ message: 'Restaurant deleted' });
+  } catch (err) {
+    console.error('DELETE RESTAURANT ERROR:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
