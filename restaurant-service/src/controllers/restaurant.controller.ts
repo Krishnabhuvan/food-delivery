@@ -38,7 +38,7 @@ export const createRestaurant = async (req: Request, res: Response) => {
 export const updateRestaurant = async (req: Request, res: Response) => {
   try {
     const ownerId = (req as any).user.id;
-    const { name, description, address, phone } = req.body;
+    const { name, description, address, phone, imageUrl } = req.body;
 
     const restaurant = await prisma.restaurant.findUnique({ where: { ownerId } });
     if (!restaurant) return res.status(404).json({ message: 'Restaurant not found' });
@@ -46,11 +46,12 @@ export const updateRestaurant = async (req: Request, res: Response) => {
     const updated = await prisma.restaurant.update({
       where: { ownerId },
       data: {
-        ...(name && { name }),
-        ...(description && { description }),
-        ...(address && { address }),
-        ...(phone && { phone })
-      }
+  ...(name && { name }),
+  ...(description && { description }),
+  ...(address && { address }),
+  ...(phone && { phone }),
+  ...(imageUrl && { imageUrl })
+}
     });
 
     await redis.del('restaurants:all');

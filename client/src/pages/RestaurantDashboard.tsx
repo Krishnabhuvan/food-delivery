@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { io } from 'socket.io-client';
+const CLOUDINARY_CLOUD_NAME = 'dpc1bqc11';
 
 interface MenuItem {
   id: string;
