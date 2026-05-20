@@ -204,7 +204,15 @@ export const completeDelivery = async (req: Request, res: Response) => {
 export const deleteRestaurantById = async (req: Request, res: Response) => {
   try {
     const id = String(req.params['id']);
+
+    // Delete related records first
+    await prisma.orderItem.deleteMany({
+      where: { menuItem: { restaurantId: id } }
+    });
+    await prisma.menuItem.deleteMany({ where: { restaurantId: id } });
+    await prisma.order.deleteMany({ where: { restaurantId: id } });
     await prisma.restaurant.delete({ where: { id } });
+
     await redis.del('restaurants:all');
     res.json({ message: 'Restaurant deleted' });
   } catch (err) {
