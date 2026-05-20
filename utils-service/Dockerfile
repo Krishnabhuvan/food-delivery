@@ -3,6 +3,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN npx tsc --rootDir src --outDir dist
 EXPOSE 4006
-CMD ["node", "dist/src/index.js"]
+CMD ["node", "dist/index.js"]
