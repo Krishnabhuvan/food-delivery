@@ -6,5 +6,6 @@ COPY tsconfig.json ./
 RUN npm ci
 RUN npx prisma generate
 COPY src ./src
+RUN npx tsc
 EXPOSE 4004
-CMD ["npx", "ts-node", "src/index.ts"]
+CMD ["node", "dist/src/index.js"]

@@ -4,5 +4,6 @@ COPY package*.json ./
 COPY tsconfig.json ./
 RUN npm ci
 COPY src ./src
+RUN npx tsc
 EXPOSE 4005
-CMD ["npx", "ts-node", "src/index.ts"]
+CMD ["node", "dist/src/index.js"]
