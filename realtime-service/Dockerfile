@@ -6,4 +6,4 @@ RUN npm ci
 COPY src ./src
 RUN npx tsc
 EXPOSE 4005
-CMD ["node", "dist/src/index.js"]
+CMD ["node", "dist/index.js"]
