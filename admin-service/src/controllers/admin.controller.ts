@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
-import { publish } from '../events/publisher';
 import axios from 'axios';
 
 const verifyRestaurantSchema = z.object({
@@ -22,7 +21,12 @@ export const verifyRestaurant = async (req: Request, res: Response) => {
 
     const { restaurantId } = parsed.data;
 
-    await publish('restaurant.verify', { restaurantId });
+    // Call restaurant service directly via HTTP
+    await axios.patch(
+      `${process.env.RESTAURANT_SERVICE_URL}/api/restaurants/${restaurantId}/verify`,
+      {},
+      { headers: { Authorization: req.headers.authorization } }
+    );
 
     await prisma.adminLog.create({
       data: {
@@ -33,7 +37,7 @@ export const verifyRestaurant = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ message: 'Restaurant verification initiated', restaurantId });
+    res.json({ message: 'Restaurant verified successfully', restaurantId });
   } catch (err) {
     console.error('VERIFY RESTAURANT ERROR:', err);
     res.status(500).json({ message: 'Server error' });
@@ -75,6 +79,7 @@ export const getLogs = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 export const deleteRestaurant = async (req: Request, res: Response) => {
   try {
     const { id } = req.params as { id: string };
