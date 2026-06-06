@@ -4,11 +4,57 @@ A production-ready food delivery platform built with a **microservices architect
 
 ---
 
-##  Screenshots
+<h2>Project Screenshots</h2>
 
-> Customer Dashboard · Restaurant Dashboard · Rider Dashboard · Admin Dashboard
+<table>
+  <tr>
+    <td><img src="application_images/login.png" width="400"></td>
+    <td><img src="application_images/register.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/list of restaurants.png" width="400"></td>
+    <td><img src="application_images/ordering food.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/view cart.png" width="400"></td>
+    <td><img src="application_images/razor_payment.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/razor_payment1.png" width="400"></td>
+    <td><img src="application_images/loading wallet.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/confiming.png" width="400"></td>
+    <td><img src="application_images/confirmation.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/order tracking.png" width="400"></td>
+    <td><img src="application_images/test_demo_razorpayment.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/setup of restaurant.png" width="400"></td>
+    <td><img src="application_images/pending_after_creating_restaurant.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/admin_verify.png" width="400"></td>
+    <td><img src="application_images/admin_verified_to_restaurnats.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/suspen_user.png" width="400"></td>
+    <td><img src="application_images/restaurant_orders.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/rider_dashboard2.png" width="400"></td>
+    <td><img src="application_images/rider_dashboard.png" width="400"></td>
+  </tr>
+  <tr>
+    <td><img src="application_images/rider_to_customer_instant_updates.png" width="400"></td>
+    <td><img src="application_images/riders_history.png" width="400"></td>
+  </tr>
+</table>
 
 ---
+
 
 ##  Architecture
 
