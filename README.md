@@ -6,52 +6,21 @@ A production-ready food delivery platform built with a **microservices architect
 
 <h2>Project Screenshots</h2>
 
-<table>
-  <tr>
-    <td><img src="application_images/login.png" width="400"></td>
-    <td><img src="application_images/register.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/list_of_restaurants.png" width="400"></td>
-    <td><img src="application_images/ordering_food.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/view_cart.png" width="400"></td>
-    <td><img src="application_images/razor_payment.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/razor_payment1.png" width="400"></td>
-    <td><img src="application_images/loading_wallet.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/confiming.png" width="400"></td>
-    <td><img src="application_images/confirmation.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/order_tracking.png" width="400"></td>
-    <td><img src="application_images/test_demo_razorpayment.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/setup_of_restaurant.png" width="400"></td>
-    <td><img src="application_images/pending_after_creating_restaurant.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/admin_verify.png" width="400"></td>
-    <td><img src="application_images/admin_verified_to_restaurnats.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/suspen_user.png" width="400"></td>
-    <td><img src="application_images/restaurant_orders.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/rider_dashboard2.png" width="400"></td>
-    <td><img src="application_images/rider_dashboard.png" width="400"></td>
-  </tr>
-  <tr>
-    <td><img src="application_images/rider_to_customer_instant_updates.png" width="400"></td>
-    <td><img src="application_images/riders_history.png" width="400"></td>
-  </tr>
-</table>
+## Project Screenshots
+
+| | |
+|---|---|
+| ![login](application_images/login.png) | ![register](application_images/register.png) |
+| ![restaurants](application_images/list_of_restaurants.png) | ![ordering](application_images/ordering_food.png) |
+| ![cart](application_images/view_cart.png) | ![payment](application_images/razor_payment.png) |
+| ![payment1](application_images/razor_payment1.png) | ![wallet](application_images/loading_wallet.png) |
+| ![confirming](application_images/confiming.png) | ![confirmation](application_images/confirmation.png) |
+| ![tracking](application_images/order_tracking.png) | ![razorpay demo](application_images/test_demo_razorpayment.png) |
+| ![restaurant setup](application_images/setup_of_restaurant.png) | ![pending](application_images/pending_after_creating_restaurant.png) |
+| ![admin verify](application_images/admin_verify.png) | ![admin verified](application_images/admin_verified_to_restaurnats.png) |
+| ![suspend user](application_images/suspen_user.png) | ![restaurant orders](application_images/restaurant_orders.png) |
+| ![rider dashboard2](application_images/rider_dashboard2.png) | ![rider dashboard](application_images/rider_dashboard.png) |
+| ![rider updates](application_images/rider_to_customer_instant_updates.png) | ![riders history](application_images/riders_history.png) |
 
 ---
 
