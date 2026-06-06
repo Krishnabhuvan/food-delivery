@@ -12,11 +12,11 @@ A production-ready food delivery platform built with a **microservices architect
     <td><img src="application_images/register.png" width="400"></td>
   </tr>
   <tr>
-    <td><img src="application_images/list of restaurants.png" width="400"></td>
+    <td><img src="application_images/list_of_restaurants.png" width="400"></td>
     <td><img src="application_images/ordering food.png" width="400"></td>
   </tr>
   <tr>
-    <td><img src="application_images/view cart.png" width="400"></td>
+    <td><img src="application_images/view_cart.png" width="400"></td>
     <td><img src="application_images/razor_payment.png" width="400"></td>
   </tr>
   <tr>
@@ -28,11 +28,11 @@ A production-ready food delivery platform built with a **microservices architect
     <td><img src="application_images/confirmation.png" width="400"></td>
   </tr>
   <tr>
-    <td><img src="application_images/order tracking.png" width="400"></td>
+    <td><img src="application_images/order_tracking.png" width="400"></td>
     <td><img src="application_images/test_demo_razorpayment.png" width="400"></td>
   </tr>
   <tr>
-    <td><img src="application_images/setup of restaurant.png" width="400"></td>
+    <td><img src="application_images/setup_of_restaurant.png" width="400"></td>
     <td><img src="application_images/pending_after_creating_restaurant.png" width="400"></td>
   </tr>
   <tr>
