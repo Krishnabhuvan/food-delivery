@@ -13,7 +13,7 @@ A production-ready food delivery platform built with a **microservices architect
   </tr>
   <tr>
     <td><img src="application_images/list_of_restaurants.png" width="400"></td>
-    <td><img src="application_images/ordering food.png" width="400"></td>
+    <td><img src="application_images/ordering_food.png" width="400"></td>
   </tr>
   <tr>
     <td><img src="application_images/view_cart.png" width="400"></td>
@@ -21,7 +21,7 @@ A production-ready food delivery platform built with a **microservices architect
   </tr>
   <tr>
     <td><img src="application_images/razor_payment1.png" width="400"></td>
-    <td><img src="application_images/loading wallet.png" width="400"></td>
+    <td><img src="application_images/loading_wallet.png" width="400"></td>
   </tr>
   <tr>
     <td><img src="application_images/confiming.png" width="400"></td>
