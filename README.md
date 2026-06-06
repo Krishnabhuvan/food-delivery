@@ -3,9 +3,6 @@
 A production-ready food delivery platform built with a **microservices architecture**, **event-driven communication**, and **real-time order tracking**.
 
 ---
-
-<h2>Project Screenshots</h2>
-
 ## Project Screenshots
 
 | | |
